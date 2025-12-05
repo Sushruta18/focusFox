@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FocusFox</title>
+    <style>
+        .task-row {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            width: 350px;
+        }
+    </style>
+</head>
+<body>
+    <h1>FocusFox 🦊</h1>
+
+    <form id="focusForm">
+
+        <!-- Mood dropdown -->
+        <label>Mood:</label>
+        <select id="mood" required>
+            <option value="happy">Happy</option>
+            <option value="tired">Tired</option>
+            <option value="lazy">Lazy</option>
+            <option value="stressed">Stressed</option>
+            <option value="neutral" selected>Neutral</option>
+        </select>
+        <br><br>
+
+        <!-- Dynamic task container -->
+        <h3>Tasks:</h3>
+        <div id="taskContainer"></div>
+
+        <button type="button" onclick="addTask()">+ Add Task</button>
+        <br><br>
+
+        <!-- Time available -->
+        <label>Time Available:</label>
+        <input type="number" id="hours" placeholder="0" min="0"> hours
+        <input type="number" id="minutes" placeholder="30" min="0"> minutes
+        <br><br>
+
+        <button type="button" onclick="sendData()">Generate Plan</button>
+    </form>
+
+    <pre id="output"></pre>
+
+    <script>
+        // Add a new task entry row
+        function addTask() {
+            const container = document.getElementById("taskContainer");
+
+            const div = document.createElement("div");
+            div.className = "task-row";
+
+            div.innerHTML = `
+                <label>Task:</label>
+                <input type="text" class="task-name" placeholder="task name" required><br><br>
+
+                <label>Priority:</label>
+                <select class="task-priority">
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+
+                <label>Estimated Time:</label>
+                <input type="number" class="task-hours" value="0" min="0">h
+                <input type="number" class="task-minutes" value="5" min="0">m<br><br>
+
+                <button type="button" onclick="this.parentElement.remove()">Remove</button>
+            `;
+
+            container.appendChild(div);
+        }
+
+        // Add one task by default
+        addTask();
+
+        // Send data to backend
+        async function sendData() {
+            const mood = document.getElementById("mood").value;
+            const hours = parseInt(document.getElementById("hours").value || 0);
+            const minutes = parseInt(document.getElementById("minutes").value || 0);
+
+            const taskDivs = document.querySelectorAll(".task-row");
+            const tasks = [];
+
+            taskDivs.forEach(div => {
+                const name = div.querySelector(".task-name").value.trim() || "Untitled Task";
+                const priority = div.querySelector(".task-priority").value; // string, ok
+                const eh = parseInt(div.querySelector(".task-hours").value || 0);
+                const em = parseInt(div.querySelector(".task-minutes").value || 5);
+
+                tasks.push({
+                    name,
+                    priority,
+                    estimated_time: { hours: eh, minutes: em }
+                });
+            });
+
+
+            const body = {
+                mood,
+                tasks,
+                time_available: { hours, minutes }
+            };
+
+            const res = await fetch("http://127.0.0.1:8000/focusfox", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            const data = await res.json();
+            document.getElementById("output").textContent =
+                JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
