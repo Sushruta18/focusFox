@@ -746,45 +746,52 @@
         addTask();
 
         async function sendData() {
-            const btn = document.getElementById('genBtn');
-            btn.classList.add('loading');
-            btn.innerHTML = '<span class="spinner"></span> Thinking...';
+                const btn = document.getElementById('genBtn');
+                btn.classList.add('loading');
+                btn.innerHTML = '<span class="spinner"></span> Waking up server...';
 
-            const hours = parseInt(document.getElementById('hours').value || 0);
-            const minutes = parseInt(document.getElementById('minutes').value || 0);
-            const tasks = [];
+                const hours = parseInt(document.getElementById('hours').value || 0);
+                const minutes = parseInt(document.getElementById('minutes').value || 0);
+                const tasks = [];
 
-            document.querySelectorAll('.task-card').forEach(div => {
-                const name = div.querySelector('.task-name-input').value.trim() || 'Unnamed task';
-                const priority = div.querySelector('.priority-tag').value;
-                const eh = parseInt(div.querySelector('.task-hours').value || 0);
-                const em = parseInt(div.querySelector('.task-minutes').value || 15);
-                tasks.push({ name, priority, estimated_time: { hours: eh, minutes: em } });
-            });
-
-            const body = {
-                mood: selectedMood,
-                tasks,
-                time_available: { hours, minutes }
-            };
-
-            try {
-                const res = await fetch('http://127.0.0.1:8000/focusfox', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
+                document.querySelectorAll('.task-card').forEach(div => {
+                    const name = div.querySelector('.task-name-input').value.trim() || 'Unnamed task';
+                    const priority = div.querySelector('.priority-tag').value;
+                    const eh = parseInt(div.querySelector('.task-hours').value || 0);
+                    const em = parseInt(div.querySelector('.task-minutes').value || 15);
+                    tasks.push({ name, priority, estimated_time: { hours: eh, minutes: em } });
                 });
-                const data = await res.json();
-                renderPlan(data, hours * 60 + minutes);
-            } catch (err) {
-                // Demo mode when backend is offline
-                const demo = buildDemo(body);
-                renderPlan(demo, hours * 60 + minutes);
-            }
 
-            btn.classList.remove('loading');
-            btn.innerHTML = 'Regenerate →';
-        }
+                const body = {
+                    mood: selectedMood,
+                    tasks,
+                    time_available: { hours, minutes }
+                };
+
+                try {
+                    // Ping to wake Render server (may take 30–50s on cold start)
+                    await fetch("https://ffocusfox-api.onrender.com/focusfox", { method: "GET" }).catch(() => { });
+
+                    btn.innerHTML = '<span class="spinner"></span> Thinking...';
+
+                    const res = await fetch("https://ffocusfox-api.onrender.com/focusfox", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(body)
+                    });
+
+                    const data = await res.json();
+                    renderPlan(data, hours * 60 + minutes);
+
+                } catch (err) {
+                    console.error(err);
+                    const demo = buildDemo(body);
+                    renderPlan(demo, hours * 60 + minutes);
+                }
+
+                btn.classList.remove('loading');
+                btn.innerHTML = 'Regenerate →';
+            }
 
         function buildDemo(body) {
             const moods = {
