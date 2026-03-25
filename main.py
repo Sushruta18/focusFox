@@ -3,30 +3,61 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
+from dotenv import load_dotenv
+import os
+from groq import Groq
 
+import logging
+
+# -------------------- Setup --------------------
+# Load .env first
+load_dotenv()
+
+# Quick debug: print immediately to confirm key is loaded
+api_key_debug = os.getenv("GROQ_API_KEY")
+print(f"DEBUG: GROQ_API_KEY loaded: {api_key_debug[:6]}...")  # Only first 6 chars for safety
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+
+# Create FastAPI app
 app = FastAPI()
 
-app.add_middleware( 
-    CORSMiddleware, 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"], 
-    allow_headers=["*"], )
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+# Global variable for OpenAI client
+client = None
+
+# -------------------- Startup Event --------------------
+@app.on_event("startup")
+def startup_event():
+    global client
+    api_key = os.getenv("GROQ_API_KEY")
+
+    if not api_key:
+        raise ValueError("GROQ_API_KEY is missing in environment variables")
+
+    logging.info(f"GROQ_API_KEY loaded: {api_key[:6]}...")
+
+    client = Groq(api_key=api_key)
+
+
+# -------------------- Models --------------------
 class TimeEstimate(BaseModel):
     hours: int = 0
     minutes: int = 0
 
 class TaskItem(BaseModel):
     name: str
-    estimated_time: Optional[TimeEstimate] = TimeEstimate() 
+    estimated_time: Optional[TimeEstimate] = TimeEstimate()
     priority: Optional[str] = "medium"
-
-PRIORITY_WEIGHTS = {
-    "high": 3,
-    "medium": 2,
-    "low": 1
-}
 
 class TimeAvailable(BaseModel):
     hours: int = 0
@@ -37,8 +68,11 @@ class InputData(BaseModel):
     mood: Optional[str] = "neutral"
     time_available: TimeAvailable = TimeAvailable()
 
+class AskInput(BaseModel):
+    question: str
 
-# --------- Motivation dictionary ---------
+# -------------------- Constants --------------------
+PRIORITY_WEIGHTS = {"high": 3, "medium": 2, "low": 1}
 MOTIVATIONS = {
     "tired": "Small steps — one tiny win at a time.",
     "stressed": "Breathe. Focus on one small task first.",
@@ -47,10 +81,8 @@ MOTIVATIONS = {
     "neutral": "Pick one small, one important task."
 }
 
-# --------- Tiny task reordering + time division ---------
+# -------------------- Helper Function --------------------
 def tiny_reorder(tasks: List[TaskItem], mood: str, time_available: TimeAvailable):
-
-    # 1. Mood-based limit
     if mood.lower() in ("tired", "stressed", "lazy"):
         tasks = tasks[:3]
     else:
@@ -59,55 +91,50 @@ def tiny_reorder(tasks: List[TaskItem], mood: str, time_available: TimeAvailable
     if not tasks:
         return []
 
-    # 2. Convert available time → minutes
     total_available = time_available.hours * 60 + time_available.minutes
 
-    # 3. Compute weighted scores for each task
     weighted_scores = []
     for task in tasks:
         est_min = task.estimated_time.hours * 60 + task.estimated_time.minutes
         if est_min == 0:
             est_min = 5
-
-        # Priority weight
         p = PRIORITY_WEIGHTS.get(task.priority.lower(), 2)
-
-        score = est_min * p
-        weighted_scores.append(score)
+        weighted_scores.append(est_min * p)
 
     total_score = sum(weighted_scores)
-
-    # 4. Allocate time proportionally using weighted scores
     plan = []
     for task, score in zip(tasks, weighted_scores):
         allocated_min = round((score / total_score) * total_available)
         h, m = divmod(allocated_min, 60)
-
-        plan.append({
-            "task": task.name,
-            "priority": task.priority,
-            "time": {"hours": h, "minutes": m}
-        })
+        plan.append({"task": task.name, "priority": task.priority, "time": {"hours": h, "minutes": m}})
 
     return plan
 
-# --------- Routes ---------
+# -------------------- Routes --------------------
 @app.get("/")
 def home():
-    """
-    Simple GET route to check server status
-    """
     return {"message": "FocusFox API is running!"}
+
+@app.post("/ask")
+def ask_ai(data: AskInput):
+    if client is None:
+        return {"error": "LLM client not initialized"}
+
+    response = client.chat.completions.create(
+        model="llama3-8b-8192",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": data.question}
+        ]
+    )
+
+    answer = response.choices[0].message.content
+    return {"answer": answer}
 
 @app.post("/focusfox")
 def focusfox(data: InputData):
-    print("Received JSON:", data.dict())
+    logging.info("Received JSON: %s", data.dict())
     mood = (data.mood or "neutral").lower()
     plan = tiny_reorder(data.tasks, mood, data.time_available)
     motivation = MOTIVATIONS.get(mood, MOTIVATIONS["neutral"])
-
-    return {
-        "greeting": f"Here’s a tiny plan for when you’re {mood}:",
-        "plan": plan,
-        "motivation": motivation
-    }
+    return {"greeting": f"Here’s a tiny plan for when you’re {mood}:", "plan": plan, "motivation": motivation}

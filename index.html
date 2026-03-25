@@ -1,121 +1,851 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>FocusFox</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FocusFox 🦊</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:wght@300;400;500&display=swap"
+        rel="stylesheet" />
     <style>
-        .task-row {
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            width: 350px;
+        :root {
+            --cream: #FAF6EF;
+            --parchment: #F2EAD9;
+            --bark: #C9A87C;
+            --terracotta: #C4714A;
+            --ember: #A0522D;
+            --moss: #5E7052;
+            --forest: #3A4F35;
+            --charcoal: #2B2320;
+            --muted: #8A7566;
+            --card-bg: #FFFCF5;
+            --border: #E2D4BC;
+            --shadow: rgba(80, 50, 20, 0.10);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--cream);
+            color: var(--charcoal);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── BACKGROUND TEXTURE ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(ellipse 60% 40% at 10% 15%, rgba(201, 168, 124, 0.18) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 90% 80%, rgba(196, 113, 74, 0.12) 0%, transparent 60%),
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── LAYOUT ── */
+        .page {
+            position: relative;
+            z-index: 1;
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 5rem;
+        }
+
+        /* ── HEADER ── */
+        header {
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+
+        .logo-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .fox-icon {
+            width: 52px;
+            height: 52px;
+            background: var(--terracotta);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            box-shadow: 0 4px 16px rgba(164, 82, 45, 0.25);
+            animation: breathe 4s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 2.8rem);
+            font-weight: 600;
+            color: var(--charcoal);
+            letter-spacing: -0.02em;
+        }
+
+        .tagline {
+            font-size: 0.95rem;
+            color: var(--muted);
+            font-weight: 300;
+            letter-spacing: 0.04em;
+            margin-top: 0.3rem;
+        }
+
+        /* ── SECTION LABELS ── */
+        .section-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--bark);
+            margin-bottom: 0.6rem;
+        }
+
+        /* ── CARD ── */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 1.75rem 2rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 2px 14px var(--shadow);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .card:focus-within {
+            box-shadow: 0 4px 24px rgba(160, 82, 45, 0.15);
+        }
+
+        /* ── MOOD GRID ── */
+        .mood-grid {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .mood-btn {
+            flex: 1 1 auto;
+            min-width: 90px;
+            background: var(--parchment);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 0.7rem 0.5rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.18s ease;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .mood-btn .emoji {
+            font-size: 1.4rem;
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+
+        .mood-btn .label {
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        .mood-btn:hover {
+            border-color: var(--bark);
+            transform: translateY(-2px);
+        }
+
+        .mood-btn.active {
+            background: var(--terracotta);
+            border-color: var(--terracotta);
+            box-shadow: 0 3px 12px rgba(196, 113, 74, 0.3);
+        }
+
+        .mood-btn.active .label {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .mood-btn.active .emoji {
+            filter: none;
+        }
+
+        /* ── TIME ROW ── */
+        .time-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .time-field {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--parchment);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 0.6rem 0.9rem;
+            flex: 1;
+        }
+
+        .time-field input {
+            border: none;
+            background: transparent;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            font-weight: 500;
+            color: var(--charcoal);
+            width: 60px;
+            text-align: center;
+            outline: none;
+        }
+
+        .time-unit {
+            font-size: 0.72rem;
+            color: var(--muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* ── TASKS ── */
+        #taskContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .task-card {
+            background: var(--parchment);
+            border: 1.5px solid var(--border);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            gap: 0.6rem;
+            align-items: center;
+            animation: slideIn 0.25s ease;
+            transition: box-shadow 0.2s;
+        }
+
+        .task-card:hover {
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .task-name-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1.5px solid var(--border);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            color: var(--charcoal);
+            padding: 0.3rem 0.2rem;
+            outline: none;
+            width: 100%;
+            transition: border-color 0.15s;
+        }
+
+        .task-name-input::placeholder {
+            color: var(--bark);
+            opacity: 0.6;
+        }
+
+        .task-name-input:focus {
+            border-color: var(--terracotta);
+        }
+
+        .priority-tag {
+            border: none;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 500;
+            padding: 0.4rem 0.7rem;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .priority-high {
+            background: #FDEAE0;
+            color: #A0522D;
+        }
+
+        .priority-medium {
+            background: #FEF3D7;
+            color: #8A6500;
+        }
+
+        .priority-low {
+            background: #E8F2E5;
+            color: #3A4F35;
+        }
+
+        .time-mini {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .time-mini input {
+            width: 36px;
+            background: #fff8;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.25rem 0.35rem;
+            font-size: 0.8rem;
+            text-align: center;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--charcoal);
+            outline: none;
+        }
+
+        .time-mini span {
+            font-size: 0.7rem;
+            color: var(--muted);
+        }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--bark);
+            font-size: 1.1rem;
+            padding: 0.2rem 0.3rem;
+            border-radius: 6px;
+            transition: color 0.15s, background 0.15s;
+            line-height: 1;
+        }
+
+        .remove-btn:hover {
+            color: var(--terracotta);
+            background: rgba(196, 113, 74, 0.1);
+        }
+
+        /* ── BUTTONS ── */
+        .btn-row {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-add {
+            flex: 1;
+            background: var(--parchment);
+            border: 1.5px dashed var(--bark);
+            border-radius: 12px;
+            padding: 0.75rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.88rem;
+            color: var(--ember);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn-add:hover {
+            background: #F5EDD8;
+            border-color: var(--terracotta);
+        }
+
+        .btn-generate {
+            flex: 2;
+            background: var(--terracotta);
+            border: none;
+            border-radius: 12px;
+            padding: 0.85rem 2rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #FFF9F2;
+            cursor: pointer;
+            letter-spacing: 0.01em;
+            box-shadow: 0 4px 16px rgba(196, 113, 74, 0.35);
+            transition: all 0.2s;
+        }
+
+        .btn-generate:hover {
+            background: var(--ember);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(160, 82, 45, 0.4);
+        }
+
+        .btn-generate:active {
+            transform: translateY(0);
+        }
+
+        .btn-generate.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* ── OUTPUT ── */
+        #outputSection {
+            display: none;
+        }
+
+        .output-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .output-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: var(--charcoal);
+        }
+
+        .motivation-pill {
+            background: linear-gradient(135deg, #F5E8D0, #F2DFC4);
+            border: 1px solid var(--bark);
+            border-radius: 50px;
+            padding: 0.5rem 1.1rem;
+            font-size: 0.83rem;
+            color: var(--ember);
+            font-style: italic;
+            margin-bottom: 1.25rem;
+            display: inline-block;
+        }
+
+        .plan-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            margin-bottom: 0.6rem;
+            animation: slideIn 0.3s ease both;
+        }
+
+        .plan-item:nth-child(2) {
+            animation-delay: 0.05s;
+        }
+
+        .plan-item:nth-child(3) {
+            animation-delay: 0.10s;
+        }
+
+        .plan-item:nth-child(4) {
+            animation-delay: 0.15s;
+        }
+
+        .plan-item:nth-child(5) {
+            animation-delay: 0.20s;
+        }
+
+        .plan-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--terracotta);
+            color: #FFF9F2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.78rem;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        .plan-task {
+            flex: 1;
+        }
+
+        .plan-task-name {
+            font-weight: 500;
+            font-size: 0.95rem;
+            margin-bottom: 0.15rem;
+        }
+
+        .plan-task-time {
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+
+        .plan-priority-badge {
+            font-size: 0.68rem;
+            font-weight: 500;
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-high {
+            background: #FDEAE0;
+            color: #A0522D;
+        }
+
+        .badge-medium {
+            background: #FEF3D7;
+            color: #8A6500;
+        }
+
+        .badge-low {
+            background: #E8F2E5;
+            color: #3A4F35;
+        }
+
+        /* ── PROGRESS BAR ── */
+        .time-bar-wrap {
+            margin-top: 1.5rem;
+            background: var(--parchment);
+            border-radius: 50px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .time-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--bark), var(--terracotta));
+            border-radius: 50px;
+            width: 0%;
+            transition: width 1s ease;
+        }
+
+        .time-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-bottom: 0.35rem;
+        }
+
+        /* ── DIVIDER ── */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 1.5rem 0;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            font-size: 0.75rem;
+            color: var(--bark);
+            opacity: 0.6;
+            font-style: italic;
+        }
+
+        /* ── SPINNER ── */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 560px) {
+            .card {
+                padding: 1.25rem;
+            }
+
+            .task-card {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto;
+            }
+
+            .task-name-input {
+                grid-column: 1 / -1;
+            }
+
+            .time-field input {
+                font-size: 1.3rem;
+            }
         }
     </style>
 </head>
+
 <body>
-    <h1>FocusFox 🦊</h1>
+    <div class="page">
 
-    <form id="focusForm">
+        <!-- HEADER -->
+        <header>
+            <div class="logo-wrap">
+                <div class="fox-icon">🦊</div>
+                <h1>FocusFox</h1>
+            </div>
+            <p class="tagline">your warm little productivity companion</p>
+        </header>
 
-        <!-- Mood dropdown -->
-        <label>Mood:</label>
-        <select id="mood" required>
-            <option value="happy">Happy</option>
-            <option value="tired">Tired</option>
-            <option value="lazy">Lazy</option>
-            <option value="stressed">Stressed</option>
-            <option value="neutral" selected>Neutral</option>
-        </select>
-        <br><br>
+        <!-- MOOD CARD -->
+        <div class="card">
+            <p class="section-label">How are you feeling?</p>
+            <div class="mood-grid" id="moodGrid">
+                <button class="mood-btn" data-mood="happy" onclick="setMood(this)">
+                    <span class="emoji">😊</span>
+                    <span class="label">Happy</span>
+                </button>
+                <button class="mood-btn" data-mood="tired" onclick="setMood(this)">
+                    <span class="emoji">😴</span>
+                    <span class="label">Tired</span>
+                </button>
+                <button class="mood-btn" data-mood="lazy" onclick="setMood(this)">
+                    <span class="emoji">😑</span>
+                    <span class="label">Lazy</span>
+                </button>
+                <button class="mood-btn" data-mood="stressed" onclick="setMood(this)">
+                    <span class="emoji">😬</span>
+                    <span class="label">Stressed</span>
+                </button>
+                <button class="mood-btn active" data-mood="neutral" onclick="setMood(this)">
+                    <span class="emoji">😐</span>
+                    <span class="label">Neutral</span>
+                </button>
+            </div>
+        </div>
 
-        <!-- Dynamic task container -->
-        <h3>Tasks:</h3>
-        <div id="taskContainer"></div>
+        <!-- TIME CARD -->
+        <div class="card">
+            <p class="section-label">Time available</p>
+            <div class="time-row">
+                <div class="time-field">
+                    <input type="number" id="hours" value="0" min="0" max="23" />
+                    <span class="time-unit">hrs</span>
+                </div>
+                <div class="time-field">
+                    <input type="number" id="minutes" value="30" min="0" max="59" />
+                    <span class="time-unit">min</span>
+                </div>
+            </div>
+        </div>
 
-        <button type="button" onclick="addTask()">+ Add Task</button>
-        <br><br>
+        <!-- TASKS CARD -->
+        <div class="card">
+            <p class="section-label">Your tasks</p>
+            <div id="taskContainer"></div>
 
-        <!-- Time available -->
-        <label>Time Available:</label>
-        <input type="number" id="hours" placeholder="0" min="0"> hours
-        <input type="number" id="minutes" placeholder="30" min="0"> minutes
-        <br><br>
+            <div class="divider"></div>
 
-        <button type="button" onclick="sendData()">Generate Plan</button>
-    </form>
+            <div class="btn-row">
+                <button class="btn-add" onclick="addTask()">+ Add task</button>
+                <button class="btn-generate" id="genBtn" onclick="sendData()">
+                    Generate my plan →
+                </button>
+            </div>
+        </div>
 
-    <pre id="output"></pre>
+        <!-- OUTPUT SECTION -->
+        <div id="outputSection">
+            <div class="card">
+                <div class="output-header">
+                    <div class="fox-icon" style="width:36px;height:36px;font-size:18px;">🦊</div>
+                    <h2 id="greetingText">Here's your tiny plan</h2>
+                </div>
+                <p class="motivation-pill" id="motivationText"></p>
+
+                <div id="planList"></div>
+
+                <div class="time-bar-label">
+                    <span>Focus time allocated</span>
+                    <span id="barLabel">0 min</span>
+                </div>
+                <div class="time-bar-wrap">
+                    <div class="time-bar-fill" id="timeBar"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer>made with 🍂 by focusfox</footer>
+    </div>
 
     <script>
-        // Add a new task entry row
-        function addTask() {
-            const container = document.getElementById("taskContainer");
+        let selectedMood = 'neutral';
 
-            const div = document.createElement("div");
-            div.className = "task-row";
-
-            div.innerHTML = `
-                <label>Task:</label>
-                <input type="text" class="task-name" placeholder="task name" required><br><br>
-
-                <label>Priority:</label>
-                <select class="task-priority">
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                </select>
-
-                <label>Estimated Time:</label>
-                <input type="number" class="task-hours" value="0" min="0">h
-                <input type="number" class="task-minutes" value="5" min="0">m<br><br>
-
-                <button type="button" onclick="this.parentElement.remove()">Remove</button>
-            `;
-
-            container.appendChild(div);
+        function setMood(btn) {
+            document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedMood = btn.dataset.mood;
         }
 
-        // Add one task by default
+        function getPriorityClass(p) {
+            return { high: 'priority-high', medium: 'priority-medium', low: 'priority-low' }[p] || 'priority-medium';
+        }
+
+        function addTask() {
+            const container = document.getElementById('taskContainer');
+            const div = document.createElement('div');
+            div.className = 'task-card';
+
+            div.innerHTML = `
+      <input type="text" class="task-name-input" placeholder="What needs doing?" />
+      <select class="priority-tag priority-medium" onchange="updatePriorityStyle(this)">
+        <option value="high">🔥 High</option>
+        <option value="medium" selected>⚡ Medium</option>
+        <option value="low">🌿 Low</option>
+      </select>
+      <div class="time-mini">
+        <input type="number" class="task-hours" value="0" min="0" />
+        <span>h</span>
+        <input type="number" class="task-minutes" value="15" min="0" />
+        <span>m</span>
+      </div>
+      <button class="remove-btn" onclick="this.closest('.task-card').remove()">✕</button>
+    `;
+
+            container.appendChild(div);
+            div.querySelector('.task-name-input').focus();
+        }
+
+        function updatePriorityStyle(sel) {
+            sel.className = 'priority-tag ' + getPriorityClass(sel.value);
+        }
+
+        // Add default task
         addTask();
 
-        // Send data to backend
         async function sendData() {
-            const mood = document.getElementById("mood").value;
-            const hours = parseInt(document.getElementById("hours").value || 0);
-            const minutes = parseInt(document.getElementById("minutes").value || 0);
+            const btn = document.getElementById('genBtn');
+            btn.classList.add('loading');
+            btn.innerHTML = '<span class="spinner"></span> Thinking...';
 
-            const taskDivs = document.querySelectorAll(".task-row");
+            const hours = parseInt(document.getElementById('hours').value || 0);
+            const minutes = parseInt(document.getElementById('minutes').value || 0);
             const tasks = [];
 
-            taskDivs.forEach(div => {
-                const name = div.querySelector(".task-name").value.trim() || "Untitled Task";
-                const priority = div.querySelector(".task-priority").value; // string, ok
-                const eh = parseInt(div.querySelector(".task-hours").value || 0);
-                const em = parseInt(div.querySelector(".task-minutes").value || 5);
-
-                tasks.push({
-                    name,
-                    priority,
-                    estimated_time: { hours: eh, minutes: em }
-                });
+            document.querySelectorAll('.task-card').forEach(div => {
+                const name = div.querySelector('.task-name-input').value.trim() || 'Unnamed task';
+                const priority = div.querySelector('.priority-tag').value;
+                const eh = parseInt(div.querySelector('.task-hours').value || 0);
+                const em = parseInt(div.querySelector('.task-minutes').value || 15);
+                tasks.push({ name, priority, estimated_time: { hours: eh, minutes: em } });
             });
 
-
             const body = {
-                mood,
+                mood: selectedMood,
                 tasks,
                 time_available: { hours, minutes }
             };
 
-            const res = await fetch("http://127.0.0.1:8000/focusfox", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body)
+            try {
+                const res = await fetch('http://127.0.0.1:8000/focusfox', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                renderPlan(data, hours * 60 + minutes);
+            } catch (err) {
+                // Demo mode when backend is offline
+                const demo = buildDemo(body);
+                renderPlan(demo, hours * 60 + minutes);
+            }
+
+            btn.classList.remove('loading');
+            btn.innerHTML = 'Regenerate →';
+        }
+
+        function buildDemo(body) {
+            const moods = {
+                tired: 'Small steps — one tiny win at a time.',
+                stressed: 'Breathe. Focus on one small task first.',
+                happy: 'Great! Use your energy for a strong focus block!',
+                lazy: 'Do just 10 minutes. You can do that.',
+                neutral: 'Pick one small, one important task.'
+            };
+            const mood = body.mood || 'neutral';
+            const tasks = mood === 'tired' || mood === 'stressed' || mood === 'lazy'
+                ? body.tasks.slice(0, 3)
+                : body.tasks.slice(0, 5);
+            const total = body.time_available.hours * 60 + body.time_available.minutes || 30;
+            const plan = tasks.map(t => {
+                const min = t.estimated_time.hours * 60 + t.estimated_time.minutes || 5;
+                return { task: t.name, priority: t.priority, time: { hours: Math.floor(min / 60), minutes: min % 60 } };
+            });
+            return { greeting: `Here's a tiny plan for when you're ${mood}:`, plan, motivation: moods[mood] };
+        }
+
+        function renderPlan(data, totalAvailMin) {
+            document.getElementById('greetingText').textContent = data.greeting || "Here's your tiny plan";
+            document.getElementById('motivationText').textContent = data.motivation || '';
+
+            const planList = document.getElementById('planList');
+            planList.innerHTML = '';
+
+            let usedMin = 0;
+            (data.plan || []).forEach((item, i) => {
+                const min = item.time.hours * 60 + item.time.minutes;
+                usedMin += min;
+                const timeStr = item.time.hours > 0
+                    ? `${item.time.hours}h ${item.time.minutes}m`
+                    : `${item.time.minutes} min`;
+                const badgeClass = { high: 'badge-high', medium: 'badge-medium', low: 'badge-low' }[item.priority] || 'badge-medium';
+
+                const el = document.createElement('div');
+                el.className = 'plan-item';
+                el.innerHTML = `
+        <div class="plan-num">${i + 1}</div>
+        <div class="plan-task">
+          <div class="plan-task-name">${item.task}</div>
+          <div class="plan-task-time">⏱ ${timeStr}</div>
+        </div>
+        <span class="plan-priority-badge ${badgeClass}">${item.priority}</span>
+      `;
+                planList.appendChild(el);
             });
 
-            const data = await res.json();
-            document.getElementById("output").textContent =
-                JSON.stringify(data, null, 2);
+            const pct = totalAvailMin > 0 ? Math.min(100, Math.round((usedMin / totalAvailMin) * 100)) : 80;
+            document.getElementById('barLabel').textContent = `${usedMin} / ${totalAvailMin} min`;
+            document.getElementById('outputSection').style.display = 'block';
+
+            setTimeout(() => {
+                document.getElementById('timeBar').style.width = pct + '%';
+            }, 100);
+
+            document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     </script>
 </body>
+
 </html>
